@@ -1,0 +1,94 @@
+# ------------------------------------------
+# Python / FastAPI / Build-related ignores
+# ------------------------------------------
+
+__pycache__/
+*.py[cod]
+*.pyo
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Local dependencies & build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Python / tooling caches
+.mypy_cache/
+.pytest_cache/
+ruff_cache/
+
+# Logs
+*.log
+logs/
+*.out
+
+# Coverage
+coverage.xml
+.coverage
+.coverage.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ------------------------------------------
+# Configuration / Secrets
+# ------------------------------------------
+
+.env
+*.env
+.env.*
+
+# Local settings
+*.local.yaml
+*.local.yml
+*.local.json
+
+# ------------------------------------------
+# Editor / IDE files
+# ------------------------------------------
+
+.idea/
+*.iml
+.vscode/
+*~
+*.swp
+*.swo
+
+# ------------------------------------------
+# OS-specific
+# ------------------------------------------
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ------------------------------------------
+# Project-specific
+# ------------------------------------------
+
+qdrant_storage/
+docker-data/
+tmp/
+temp/
+
+# Test suite not needed in runtime image
+tests/
+
+# Generated files
+*.tmp
+*.bak
+*.old
+
+# Reports / exports
+reports/
+exports/

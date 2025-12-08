@@ -1,0 +1,100 @@
+# ------------------------------------------
+# Python / FastAPI / Build-related ignores
+# ------------------------------------------
+
+__pycache__/
+*.py[cod]
+*.pyo
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Local dependencies & build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Python / tooling caches
+.mypy_cache/
+.pytest_cache/
+ruff_cache/
+
+# Logs
+*.log
+logs/
+*.out
+
+# Coverage
+coverage.xml
+.coverage
+.coverage.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ------------------------------------------
+# Configuration / Secrets
+# ------------------------------------------
+
+.env
+*.env
+.env.*
+
+# Ignore local settings
+*.local.yaml
+*.local.yml
+*.local.json
+
+# ------------------------------------------
+# Editor / IDE files
+# ------------------------------------------
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# Generic editor artifacts
+*~
+*.swp
+*.swo
+
+# ------------------------------------------
+# OS-specific
+# ------------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ------------------------------------------
+# Project-specific
+# ------------------------------------------
+
+# Qdrant / runtime data
+qdrant_storage/
+docker-data/
+tmp/
+temp/
+
+# Generated files
+*.tmp
+*.bak
+*.old
+
+# Reports / exports
+reports/
+exports/

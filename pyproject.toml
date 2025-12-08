@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-agent-service"
+version = "0.1.0"
+description = "Production-ready RAG agent microservice built with FastAPI, Qdrant and sentence-transformers."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "punschkrapferl" }
+]
+
+# Dependencies are managed via requirements.txt for this project.
+# Could be mirrored here later if wanting to publish the package.
+dependencies = []
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
