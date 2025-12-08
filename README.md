@@ -40,6 +40,38 @@ curl -X POST "http://localhost:8000/api/ingest/text" -H "Content-Type: applicati
 curl -X POST "http://localhost:8000/api/query" -H "Content-Type: application/json" -d '{"query": "What is
 the capital of France?", "top_k": 3}'
 ```
+# Demo Scripts (Local Testing)
+The project includes three small Python scripts for **quick, end-to-end testing** of the RAG service
+without using curl. These scripts run against the default API base:
+```
+http://localhost:8000/api
+```
+## 1. `demo_all.py`
+Runs the full workflow in one go:
+- Health check
+- Ingest single text documents
+- Ingest batch of texts
+- Optional file ingest
+- Query endpoint tests
+**Usage:**
+```bash
+python demo_all.py
+```
+## 2. `ingest_demo.py`
+Tests **single-document ingestion**:
+```bash
+python ingest_demo.py
+```
+## 3. `ingest_batch_demo.py`
+Tests **batch ingestion** (multiple documents at once):
+```bash
+python ingest_batch_demo.py
+```
+## 4. `query_demo.py`
+Sends several example queries to the vector database:
+```bash
+python query_demo.py
+```
 You will see a retrieved document and a placeholder answer.
 ---
 ---
