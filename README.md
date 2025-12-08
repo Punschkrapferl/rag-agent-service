@@ -55,22 +55,22 @@ Runs the full workflow in one go:
 - Query endpoint tests
 **Usage:**
 ```bash
-python demo_all.py
+python ./app/demo/demo_all.py
 ```
 ## 2. `ingest_demo.py`
 Tests **single-document ingestion**:
 ```bash
-python ingest_demo.py
+python ./app/demo/ingest_demo.py
 ```
 ## 3. `ingest_batch_demo.py`
 Tests **batch ingestion** (multiple documents at once):
 ```bash
-python ingest_batch_demo.py
+python ./app/demo/ingest_batch_demo.py
 ```
 ## 4. `query_demo.py`
 Sends several example queries to the vector database:
 ```bash
-python query_demo.py
+python ./app/demo/query_demo.py
 ```
 You will see a retrieved document and a placeholder answer.
 ---
