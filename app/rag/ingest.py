@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from uuid import uuid4  # used for unique chunk IDs
 
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
@@ -43,13 +44,6 @@ def extract_text_from_pdf(path: Path) -> str:
 
     Each page is processed with pypdf's `extract_text`, and page texts are
     joined with newline separators.
-
-    Args:
-        path: Filesystem path to the PDF file.
-
-    Returns:
-        A single string containing the concatenated text of all pages.
-        If a page has no extractable text, an empty string is used for that page.
     """
     reader = PdfReader(str(path))
     texts: List[str] = []
@@ -63,51 +57,31 @@ def extract_text_from_html(path: Path) -> str:
     """
     Extract visible text from an HTML file.
 
-    This function:
     - Reads the file as UTF-8 text.
     - Parses it with BeautifulSoup.
     - Removes script/style/noscript tags.
     - Collapses whitespace.
-
-    Args:
-        path: Filesystem path to the HTML/HTM file.
-
-    Returns:
-        A whitespace-normalized string containing visible text.
     """
     html = path.read_text(encoding="utf-8")
     soup = BeautifulSoup(html, "html.parser")
 
-    # Remove non-content tags
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
 
     text = soup.get_text(separator=" ")
-    # Normalize whitespace
     return " ".join(text.split())
 
 
 def extract_text_from_file(path: Path) -> str:
     """
     Extract text from a file, dispatching based on file extension.
-
-    Supported:
-    - `.pdf`  → `extract_text_from_pdf`
-    - `.html` / `.htm` → `extract_text_from_html`
-    - anything else → treated as UTF-8 plain text
-
-    Args:
-        path: Filesystem path to the document.
-
-    Returns:
-        Extracted text as a string.
     """
     suffix = path.suffix.lower()
     if suffix == ".pdf":
         return extract_text_from_pdf(path)
     if suffix in {".html", ".htm"}:
         return extract_text_from_html(path)
-    # Fallback: treat as plain text
+    # Fallback: treat as UTF-8 plain text
     return path.read_text(encoding="utf-8")
 
 
@@ -123,22 +97,6 @@ def chunk_text(
 ) -> List[str]:
     """
     Split text into overlapping word-based chunks.
-
-    This intentionally avoids a heavy tokenizer dependency and approximates
-    "tokens" by simple whitespace-separated words.
-
-    Behavior:
-    - Split the input string on whitespace to obtain a list of "tokens".
-    - Create chunks of length `max_tokens` words.
-    - Between chunks, keep `overlap` words of overlap to improve recall.
-
-    Args:
-        text: Raw text to be chunked.
-        max_tokens: Maximum number of words per chunk.
-        overlap: Number of words to overlap between consecutive chunks.
-
-    Returns:
-        A list of chunk strings. Returns an empty list if the input is empty.
     """
     words = text.split()
     if not words:
@@ -174,23 +132,15 @@ def ingest_text(
     End-to-end ingestion pipeline for already extracted text.
 
     Steps:
-    1. Chunk the input text with `chunk_text`.
-    2. Encode each chunk using the provided sentence-transformers model.
+    1. Chunk the input text.
+    2. Encode each chunk using the sentence-transformers model.
     3. Upsert embeddings + payload into the vector store.
 
     Each stored document payload contains:
     - `text`: the chunk text
     - `chunk_index`: position of the chunk within the document
+    - `chunk_id`: globally unique ID for the chunk (for debugging/tracing)
     - all fields from `metadata` (if provided)
-
-    Args:
-        text: Raw text to ingest.
-        metadata: Optional base metadata attached to every chunk payload.
-        vector_store: VectorStore used to upsert embeddings into Qdrant.
-        embedder: Sentence-transformers model used to encode the chunks.
-
-    Returns:
-        The number of chunks that were ingested (0 if there was no text).
     """
     chunks = chunk_text(text)
     if not chunks:
@@ -200,10 +150,13 @@ def ingest_text(
 
     docs: List[Dict[str, Any]] = []
     base_meta = metadata or {}
+    document_id = base_meta.get("document_id", "doc")
+
     for idx, chunk in enumerate(chunks):
         doc: Dict[str, Any] = {
             "text": chunk,
             "chunk_index": idx,
+            "chunk_id": f"{document_id}-{idx}-{uuid4()}",
         }
         doc.update(base_meta)
         docs.append(doc)
@@ -220,22 +173,6 @@ def ingest_file(
 ) -> int:
     """
     Convenience wrapper for ingesting a document file from disk.
-
-    The file is:
-    - Parsed into text via `extract_text_from_file`.
-    - Passed to `ingest_text` together with metadata.
-
-    An additional metadata field `source_path` is always added to the payload
-    to record the origin of the ingested content.
-
-    Args:
-        path: Filesystem path to the document file (PDF/HTML/TXT).
-        metadata: Optional base metadata attached to every chunk.
-        vector_store: VectorStore used for upserts.
-        embedder: Sentence-transformers model.
-
-    Returns:
-        The number of chunks ingested for this file.
     """
     text = extract_text_from_file(path)
     file_meta = {"source_path": str(path)}

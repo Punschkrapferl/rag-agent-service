@@ -6,17 +6,14 @@ This module defines a thin wrapper around `QdrantClient` that is responsible for
 - Ensuring the target collection exists with the correct vector size and distance metric.
 - Upserting embeddings together with arbitrary payload metadata.
 - Running vector similarity search with an optional filter.
-
-By centralizing this logic, the rest of the application (ingestion, query API,
-pipeline) can work with a simple `VectorStore` interface instead of directly
-handling Qdrant client details.
 """
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from qdrant_client import QdrantClient
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import Distance, Filter, PointStruct, VectorParams
 
 from app.config import get_settings
@@ -39,21 +36,14 @@ class VectorStore:
         collection_name: Optional[str] = None,
         dim: int = 384,
     ) -> None:
-        """
-        Initialize a VectorStore.
-
-        Args:
-            client: Initialized `QdrantClient` instance.
-            collection_name: Name of the Qdrant collection to use. If not
-                provided, the value from application settings is used.
-            dim: Dimensionality of the embedding vectors. Must match the
-                embedding model output size.
-        """
         settings = get_settings()
         self.client = client
         self.collection_name = collection_name or settings.qdrant_collection
         self.dim = dim
         self._ensure_collection()
+
+        # in-memory counter for sequential IDs
+        self._id_counter: Optional[int] = None
 
     def _ensure_collection(self) -> None:
         """
@@ -73,6 +63,39 @@ class VectorStore:
             )
 
     # -----------------------------------------------------------------------
+    # ID handling
+    # -----------------------------------------------------------------------
+
+    def _ensure_id_counter(self) -> None:
+        """
+        Initialize the ID counter from the current point count in Qdrant.
+
+        If the collection is empty, we start at 0.
+        Otherwise we start at `count`, so new IDs are appended after existing ones.
+        """
+        if self._id_counter is not None:
+            return
+
+        try:
+            result = self.client.count(self.collection_name, exact=True)
+        except UnexpectedResponse:
+            # If count fails (e.g. collection just created but not ready),
+            # fall back to 0; subsequent inserts will move the counter forward.
+            self._id_counter = 0
+        else:
+            self._id_counter = result.count
+
+    def _next_id(self) -> int:
+        """
+        Return the next sequential integer ID for a new point.
+        """
+        self._ensure_id_counter()
+        assert self._id_counter is not None
+        point_id = self._id_counter
+        self._id_counter += 1
+        return point_id
+
+    # -----------------------------------------------------------------------
     # Ingestion API
     # -----------------------------------------------------------------------
 
@@ -84,28 +107,18 @@ class VectorStore:
         """
         Upsert embeddings and their payloads into the Qdrant collection.
 
-        For each document, a corresponding vector is upserted as a `PointStruct`.
-        The payload is stored as-is, enabling flexible metadata filtering later.
-
-        Each document dict may contain:
-        - "id" (optional): custom point id; if missing, the index in the list is used.
-        - "text": chunk text.
-        - Any additional metadata fields (e.g. document_id, filename, etc.).
-
-        Args:
-            embeddings: List of embedding vectors, one per document.
-            documents: List of payload dictionaries, one per embedding.
-
-        Raises:
-            ValueError: If the number of embeddings does not match the number
-                of documents.
+        IDs are assigned as sequential integers starting at 0 and increasing
+        across the lifetime of the collection. This avoids overwriting points
+        while keeping IDs human-readable in the dashboard.
         """
         if len(embeddings) != len(documents):
             raise ValueError("embeddings and documents must have same length")
 
         points: List[PointStruct] = []
-        for idx, (embedding, doc) in enumerate(zip(embeddings, documents)):
-            point_id: Any = doc.get("id", idx)
+
+        for embedding, doc in zip(embeddings, documents):
+            point_id = self._next_id()
+
             points.append(
                 PointStruct(
                     id=point_id,
@@ -132,15 +145,6 @@ class VectorStore:
     ):
         """
         Perform a vector similarity search against the collection.
-
-        Args:
-            query_embedding: Embedding vector representing the query.
-            top_k: Maximum number of nearest neighbors to return.
-            qfilter: Optional Qdrant `Filter` to restrict the search to a subset
-                of points based on payload conditions.
-
-        Returns:
-            A list of `ScoredPoint` objects as returned by `QdrantClient.search`.
         """
         return self.client.search(
             collection_name=self.collection_name,
