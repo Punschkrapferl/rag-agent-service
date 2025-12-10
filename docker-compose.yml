@@ -10,18 +10,12 @@ services:
     image: punschkrapferl23/rag-agent-service-api:latest
     depends_on:
       - qdrant
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - ENVIRONMENT=docker
     ports:
       - "8000:8000"
-
-  automation-gateway:
-    image: punschkrapferl23/automation-gateway:latest
-    depends_on:
-      - rag-api
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - AI_SERVICE_BASE_URL=http://rag-api:8000
-    ports:
-      - "8080:8080"
 
 volumes:
   qdrant_storage:

@@ -1,7 +1,13 @@
 # RAG Agent Service
-RAG Agent Service
+
 A production-style Retrieval-Augmented Generation (RAG) microservice built with FastAPI, Qdrant, and Sentence-Transformers.
-The service supports text ingestion, vector embedding, semantic search, and query answering.
+The service supports:
+- Text ingestion (raw text, PDF, HTML)
+- Chunking and embedding
+- Semantic vector search
+- Query answering
+- Debug & inspection endpoints
+
 ---
 # Run Using Prebuilt Docker Images (Recommended for Reviewers)
 You do **not** need to clone or build anything.
@@ -13,11 +19,11 @@ https://www.docker.com/products/docker-desktop/
 ```
 docker compose up
 ```
-Docker will automatically pull the prebuilt images from Docker Hub:
-punschkrapferl23/rag-agent-service-api:latest
-qdrant/qdrant:v1.11.0
+Docker automatically pulls the prebuilt images from Docker Hub:
+- punschkrapferl23/rag-agent-service-api:latest
+- qdrant/qdrant:v1.11.0
 
-Components:
+Running Components:
 - **rag-api** → FastAPI backend (http://localhost:8000)
 - **qdrant** → Vector DB + dashboard (http://localhost:6333/dashboard)
 ---
@@ -41,13 +47,18 @@ curl -X POST "http://localhost:8000/api/query" -H "Content-Type: application/jso
 "top_k": 3
 }'
 ```
-
+# Debug: List All Qdrant Collections
+```
+curl http://localhost:8000/api/debug/collections
+```
 # Local Development (Build from Source)
 ```
 git clone https://github.com/your/repo.git
 cd rag-agent-service
 docker compose -f docker-compose.dev.yml up --build
 ```
+This builds the API locally and mounts the source code for hot-reload.
+---
 ---
 # Note on Image Size
 The main API image is ~2 GB because it includes:
@@ -61,9 +72,15 @@ In a real production environment:
 - Base image would be changed to python:slim
 - Layers would be aggressively minimized
 ---
-
+Production optimization strategy:
+---
+- Use ```python:slim``` base image
+- Mount the embedding model from a volume instead of bundling it 
+- Multi-stage builds
+- Remove build tools after installation
 ---
 # Demo Scripts
+located in the demo/ directory:
 ## Run full workflow
 ```
 python demo/demo_all.py
@@ -83,8 +100,11 @@ python demo/query_demo.py
 ---
 # Architecture Overview
 ```
-Client → FastAPI (rag-api) → Embedding Model → Qdrant Vector DB
-→ Ranked Results → JSON Response
+Client → FastAPI (rag-api) 
+        → Embedding Model 
+        → Qdrant Vector DB
+        → Ranked Results 
+        → JSON Response
 ```
 Main Components:
 - FastAPI backend
@@ -97,6 +117,7 @@ Main Components:
 ```
 app/
 api/
+routes_debug.py
 routes_health.py
 routes_ingest.py
 routes_query.py
@@ -138,9 +159,19 @@ Make sure the container is running:
 ```
 docker logs qdrant
 ```
-API returns empty search results
+Queries returns empty search results
 ---
 Ensure at least one document was ingested before querying.
+```
+curl http://localhost:8000/api/debug/collections
+```
+Dev build is slow:
+---
+First build downloads:
+- Model weights
+- Build dependencies
+---
+After that, caching makes it much faster.
 # MIT License
 
 Copyright (c) 2025 Punschkrapferl

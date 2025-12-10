@@ -5,7 +5,7 @@ This module is responsible for:
 
 - Creating and configuring the FastAPI application instance.
 - Wiring up:
-  - Routers (health, ingest, query) under a common API prefix.
+  - Routers (health, ingest, query, debug) under a common API prefix.
   - Structured logging.
   - Prometheus metrics (`/metrics` endpoint).
   - OpenTelemetry tracing.
@@ -23,8 +23,9 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 
-from app.api import routes_health, routes_ingest, routes_query
+from app.api import routes_health, routes_ingest, routes_query, routes_debug
 from app.config import get_settings
+from app.deps import get_embedding_model  # warm-up: load SentenceTransformer once
 from app.logging_config import configure_logging
 from app.observability.metrics import setup_metrics
 from app.observability.tracing import setup_tracing
@@ -38,24 +39,23 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """
     Application lifespan context manager.
 
-    This replaces the deprecated `@app.on_event("startup"/"shutdown")`
-    decorators. It is called by FastAPI when the application starts and stops.
-
     Startup:
         - Logs a "startup" event including the current environment.
+        - Warms up the embedding model so the first request does not block
+          on model download/initialization.
 
     Shutdown:
         - Logs a "shutdown" event.
-
-    Args:
-        _app: FastAPI application instance (unused, but required by the
-            lifespan interface).
-
-    Yields:
-        None: Control is handed back to FastAPI while the app is running.
     """
     # Startup logic
     logger.info("startup", environment=settings.environment)
+
+    # Warm up the embedding model once at startup so that subsequent requests
+    # can reuse the cached instance without incurring a long delay.
+    logger.info("model_warmup_start", model_name=settings.embedding_model_name)
+    _ = get_embedding_model()
+    logger.info("model_warmup_complete", model_name=settings.embedding_model_name)
+
     try:
         yield
     finally:
@@ -87,6 +87,7 @@ def create_app() -> FastAPI:
     application.include_router(routes_health.router, prefix=settings.api_prefix)
     application.include_router(routes_query.router, prefix=settings.api_prefix)
     application.include_router(routes_ingest.router, prefix=settings.api_prefix)
+    application.include_router(routes_debug.router, prefix=settings.api_prefix)
 
     # Observability hooks
     setup_metrics(application)
