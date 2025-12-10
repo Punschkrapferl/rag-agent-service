@@ -53,7 +53,7 @@ curl http://localhost:8000/api/debug/collections
 ```
 # Local Development (Build from Source)
 ```
-git clone https://github.com/your/repo.git
+git clone https://github.com/Punschkrapferl/rag-agent-service.git
 cd rag-agent-service
 docker compose -f docker-compose.dev.yml up --build
 ```
