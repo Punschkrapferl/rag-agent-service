@@ -1,29 +1,27 @@
 # RAG Agent Service
-A production-style Retrieval-Augmented Generation (RAG) microservice built with FastAPI, Qdrant,
-and Sentence-Transformers.
+RAG Agent Service
+A production-style Retrieval-Augmented Generation (RAG) microservice built with FastAPI, Qdrant, and Sentence-Transformers.
+The service supports text ingestion, vector embedding, semantic search, and query answering.
 ---
 # Run Using Prebuilt Docker Images (Recommended for Reviewers)
 You do **not** need to clone or build anything.
 Start the full system directly using Docker Hub images:
+---
+# 1. Install Docker Desktop
+https://www.docker.com/products/docker-desktop/
+# 2. Start the entire system
 ```
 docker compose up
 ```
+Docker will automatically pull the prebuilt images from Docker Hub:
+punschkrapferl23/rag-agent-service-api:latest
+qdrant/qdrant:v1.11.0
+
 Components:
 - **rag-api** → FastAPI backend (http://localhost:8000)
 - **qdrant** → Vector DB + dashboard (http://localhost:6333/dashboard)
 ---
-# Local Development (Build from Source)
-```
-git clone https://github.com/your/repo.git
-cd rag-agent-service
-docker compose -f docker-compose.dev.yml up --build
-```
----
-# Note on Image Size
-The `rag-agent-service-api` image is ~2 GB due to embedded ML dependencies.
-In production, the model would be a mounted volume and the base image optimized (`python:slim`).
----
-# API Usage Examples
+# API Usage Examples - Test after docker compose up
 ## Health Check
 ```
 curl http://localhost:8000/api/health
@@ -38,9 +36,32 @@ curl -X POST "http://localhost:8000/api/ingest/text" -H "Content-Type: applicati
 ```
 ## Query
 ```
-curl -X POST "http://localhost:8000/api/query" -H "Content-Type: application/json" -d '{"query":
-"What is the capital of France?", "top_k": 3}'
+curl -X POST "http://localhost:8000/api/query" -H "Content-Type: application/json" -d '{
+"query": "What is the capital of France?",
+"top_k": 3
+}'
 ```
+
+# Local Development (Build from Source)
+```
+git clone https://github.com/your/repo.git
+cd rag-agent-service
+docker compose -f docker-compose.dev.yml up --build
+```
+---
+# Note on Image Size
+The main API image is ~2 GB because it includes:
+- Python + FastAPI
+- Qdrant client libraries
+- Sentence-transformers model weights
+- PDF/HTML extraction dependencies
+
+In a real production environment:
+- The model would be mounted as a volume
+- Base image would be changed to python:slim
+- Layers would be aggressively minimized
+---
+
 ---
 # Demo Scripts
 ## Run full workflow
@@ -59,6 +80,18 @@ python demo/ingest_batch_demo.py
 ```
 python demo/query_demo.py
 ```
+---
+# Architecture Overview
+```
+Client → FastAPI (rag-api) → Embedding Model → Qdrant Vector DB
+→ Ranked Results → JSON Response
+```
+Main Components:
+- FastAPI backend
+- Sentence-Transformers embedding model
+- Qdrant vector store
+- Ingestion + chunking pipeline
+- Semantic search
 ---
 # Project Structure
 ```
@@ -84,6 +117,7 @@ tests/
 test_health.py
 test_query.py
 docker-compose.yml
+docker-compose.dev.yml
 requirements.txt
 README.md
 ```
