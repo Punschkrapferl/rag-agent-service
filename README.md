@@ -122,6 +122,25 @@ requirements.txt
 README.md
 ```
 ---
+# Troubleshooting
+Port already in use
+```
+Error: port 8000/6333 already allocated
+```
+Fix:
+```
+docker ps
+docker rm -f <container-id>
+```
+Qdrant dashoard not loading
+---
+Make sure the container is running:
+```
+docker logs qdrant
+```
+API returns empty search results
+---
+Ensure at least one document was ingested before querying.
 # MIT License
 
 Copyright (c) 2025 Punschkrapferl
