@@ -92,3 +92,14 @@ tests/
 # Reports / exports
 reports/
 exports/
+
+# HuggingFace / sentence-transformers cache
+.huggingface/
+.cache/
+.cache/huggingface/
+.cache/torch/
+
+# Docker artifacts
+*.tar
+*.tar.gz
+*.tgz
