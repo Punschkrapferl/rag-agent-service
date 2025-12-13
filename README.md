@@ -11,15 +11,15 @@ The service supports:
 ---
 # Run Using Prebuilt Docker Images (Recommended for Reviewers)
 You do **not** need to clone or build anything.
-Start the full system directly using Docker Hub images:
+Start the full system directly using prebuilt Docker Hub images:
 ---
 # 1. Install Docker Desktop
-https://www.docker.com/products/docker-desktop/
-# 2. Start the entire system
+`https://www.docker.com/products/docker-desktop/`
+# 2. Start the entire system (prebuilt images)
+```bash
+docker-compose -f docker-compose.demo.yml up
 ```
-docker compose up
-```
-Docker automatically pulls the prebuilt images from Docker Hub:
+This uses the prebuilt Docker images published on Docker Hub:
 - punschkrapferl23/rag-agent-service-api:latest
 - qdrant/qdrant:v1.11.0
 
@@ -57,8 +57,22 @@ git clone https://github.com/Punschkrapferl/rag-agent-service.git
 cd rag-agent-service
 docker compose -f docker-compose.dev.yml up --build
 ```
-This builds the API locally and mounts the source code for hot-reload.
----
+This builds the API locally from source using Docker and is intended for 
+development and debugging.
+
+# Debug: Cleanup demo vectors
+Deletes vectors marked with `metadata.source = "demo"` without dropping the collection.
+
+```bash
+curl -X DELETE http://localhost:8000/api/debug/qdrant/demo-vectors
+```
+Debug endpoints are intended for development and demo purposes and are not exposed in a hardened production setup.
+
+Interactive API documentation is available at:
+`http://localhost:8000/docs`
+
+
+
 ---
 # Note on Image Size
 The main API image is ~2 GB because it includes:

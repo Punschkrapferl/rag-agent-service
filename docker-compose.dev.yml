@@ -8,7 +8,7 @@ services:
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
-      - ENVIRONMENT=docker
+      - ENVIRONMENT=dev
     depends_on:
       - qdrant
 
