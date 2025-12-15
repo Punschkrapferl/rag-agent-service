@@ -15,8 +15,10 @@ Start the full system directly using prebuilt Docker Hub images:
 ---
 # 1. Install Docker Desktop
 `https://www.docker.com/products/docker-desktop/`
-# 2. Start the entire system (prebuilt images)
+# 2. Clone the repo and start the entire system (prebuilt images)
 ```bash
+git clone https://github.com/Punschkrapferl/rag-agent-service.git
+cd rag-agent-service
 docker-compose -f docker-compose.demo.yml up
 ```
 This uses the prebuilt Docker images published on Docker Hub:
@@ -71,8 +73,6 @@ Debug endpoints are intended for development and demo purposes and are not expos
 Interactive API documentation is available at:
 `http://localhost:8000/docs`
 
-
-
 ---
 # Note on Image Size
 The main API image is ~2 GB because it includes:
@@ -88,7 +88,7 @@ In a real production environment:
 ---
 Production optimization strategy:
 ---
-- Use ```python:slim``` base image
+- Use ```python:v1.0.2``` base image
 - Mount the embedding model from a volume instead of bundling it 
 - Multi-stage builds
 - Remove build tools after installation
@@ -131,26 +131,26 @@ Main Components:
 ```
 app/
 api/
-routes_debug.py
-routes_health.py
-routes_ingest.py
-routes_query.py
+    routes_debug.py
+    routes_health.py
+    routes_ingest.py
+    routes_query.py
 rag/
-ingest.py
-pipeline.py
-vectorstore.py
-models.py
+    ingest.py
+    pipeline.py
+    vectorstore.py
+    models.py
 observability/
-metrics.py
-tracing.py
-deps.py
-config.py
-main.py
+    metrics.py
+    tracing.py
+    deps.py
+    config.py
+    main.py
 docker/
-Dockerfile.api
+    Dockerfile.api
 tests/
-test_health.py
-test_query.py
+    test_health.py
+    test_query.py
 docker-compose.yml
 docker-compose.dev.yml
 requirements.txt
